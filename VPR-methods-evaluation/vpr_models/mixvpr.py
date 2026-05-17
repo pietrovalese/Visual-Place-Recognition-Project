@@ -90,9 +90,32 @@ class MixVPR(nn.Module):
         x = F.normalize(x.flatten(1), p=2, dim=-1)
         return x
 
-### Implement ResNet-50 here for MixVPR model,
-### otherwise `self.backbone = ResNet()` will fail
-### (academic purpose)
+class ResNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.model = torchvision.models.resnet50(
+            weights=torchvision.models.ResNet50_Weights.DEFAULT
+        )
+
+        # Remove classifier
+        self.model.avgpool = nn.Identity()
+        self.model.fc = nn.Identity()
+
+    def forward(self, x):
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+
+        # Output:
+        # (B, 1024, 20, 20) for input 320x320
+
+        return x
 
 
 class MixVPRModel(torch.nn.Module):
@@ -123,9 +146,9 @@ def get_mixvpr(descriptors_dimension):
     file_path = f"trained_models/mixvpr/{filename}"
     if not os.path.exists(file_path):
         os.makedirs("trained_models/mixvpr", exist_ok=True)
-        gdown.download(url=url, output=file_path, fuzzy=True)
+        gdown.download(id=url.split("/d/")[1].split("/")[0], output=file_path)
     state_dict = torch.load(file_path)
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict, strict=False)
     model = model.eval()
 
     return model
