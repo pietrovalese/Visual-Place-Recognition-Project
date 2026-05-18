@@ -15,7 +15,7 @@ def get_clique_mining_model():
 
     if not os.path.exists(file_path):
         os.makedirs("trained_models", exist_ok=True)
-        gdown.download(url=URL, output=file_path, fuzzy=True)
+        gdown.download(id=URL.split("/d/")[1].split("/")[0], output=file_path)
 
     state_dict = torch.load(file_path)["state_dict"]
     model.load_state_dict(state_dict)
